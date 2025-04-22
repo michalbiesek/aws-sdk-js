@@ -276200,11 +276200,14 @@ AWS.EventListeners = {
     });
 
     add('COMPUTE_CHECKSUM', 'afterBuild', function COMPUTE_CHECKSUM(req) {
+      console.log('[DEBUG] COMPUTE_CHECKSUM called');
       if (!req.service.api.operations) {
+        console.log('[DEBUG] No operations in API');
         return;
       }
       var operation = req.service.api.operations[req.operation];
       if (!operation) {
+        console.log('[DEBUG] Operation not found:');
         return;
       }
       var body = req.httpRequest.body;
@@ -276218,6 +276221,9 @@ AWS.EventListeners = {
       ) {
         var md5 = AWS.util.crypto.md5(body, 'base64');
         headers['Content-MD5'] = md5;
+        console.log('[DEBUG] Computed MD5 and added to headers:');
+      } else {
+        console.log('[DEBUG] Skipping checksum computation');
       }
     });
 
@@ -283791,8 +283797,10 @@ AWS.util.update(AWS.S3.prototype, {
    * @api private
    */
   willComputeChecksums: function willComputeChecksums(req) {
+    console.log('[DEBUG] aws-sdk willComputeChecksums called');
     var rules = req.service.api.operations[req.operation].input.members;
     var body = req.httpRequest.body;
+
     var needsContentMD5 = req.service.config.computeChecksums &&
       rules.ContentMD5 &&
       !req.params.ContentMD5 &&
@@ -283801,14 +283809,16 @@ AWS.util.update(AWS.S3.prototype, {
 
     // Sha256 signing disabled, and not a presigned url
     if (needsContentMD5 && req.service.shouldDisableBodySigning(req) && !req.isPresigned()) {
+      console.log('[DEBUG] aws-sdk Returning true (sha256 signing disabled and not presigned)');
       return true;
     }
 
     // SigV2 and presign, for backwards compatibility purpose.
     if (needsContentMD5 && this.getSignatureVersion(req) === 's3' && req.isPresigned()) {
+      console.log('[DEBUG] aws-sdk Returning true (SigV2 and presigned)');
       return true;
     }
-
+    console.log('[DEBUG] aws-sdk Returning false (checksum not required)');
     return false;
   },
 
